@@ -3,7 +3,10 @@
 #include "BasePlayerState.h"
 #include "BaseAttributeSet.h"
 
-ABaseCharacter::ABaseCharacter() {}
+ABaseCharacter::ABaseCharacter() 
+{
+    StanceComp = CreateDefaultSubobject<UStanceComponent>("StanceComp");
+}
 
 UAbilitySystemComponent* ABaseCharacter::GetAbilitySystemComponent() const { return CachedASC; }
 

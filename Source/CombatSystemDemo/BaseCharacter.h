@@ -2,6 +2,7 @@
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
 #include "GameplayTagContainer.h"
+#include "StanceComponent.h"
 #include "BaseCharacter.generated.h"
 
 class UAbilitySystemComponent;
@@ -22,6 +23,9 @@ public:
 
     UPROPERTY(EditDefaultsOnly, Category = "GAS")
     TSubclassOf<class UGameplayEffect> DefaultAttributesEffect;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stance")
+    UStanceComponent* StanceComp;
 
 protected:
     UPROPERTY() UAbilitySystemComponent* CachedASC;

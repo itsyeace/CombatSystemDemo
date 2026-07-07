@@ -50,6 +50,12 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* MouseLookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* MeleeAttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* ToggleStanceAction;
+
 public:
 
 	/** Constructor */
@@ -86,6 +92,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
 
+	void HandleMeleeAttack();
+	void HandleToggleStance();
+
 public:
 
 	/** Returns CameraBoom subobject **/
@@ -93,5 +102,11 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	int32 CurrentComboIndex = 0;
+	float LastAttackTime = 0.f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TArray<TSubclassOf<class UGameplayAbility>> ComboAbilities;
 };
 

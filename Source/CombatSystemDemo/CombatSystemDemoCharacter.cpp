@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CombatSystemDemo.h"
+#include "AbilitySystemComponent.h"
 
 ACombatSystemDemoCharacter::ACombatSystemDemoCharacter()
 {
@@ -65,6 +66,9 @@ void ACombatSystemDemoCharacter::SetupPlayerInputComponent(UInputComponent* Play
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACombatSystemDemoCharacter::Look);
+
+		EnhancedInputComponent->BindAction(MeleeAttackAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleMeleeAttack);
+		EnhancedInputComponent->BindAction(ToggleStanceAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleToggleStance);
 	}
 	else
 	{
@@ -130,4 +134,33 @@ void ACombatSystemDemoCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void ACombatSystemDemoCharacter::HandleMeleeAttack()
+{
+	if (!StanceComp || !StanceComp->IsMelee()) return;
+
+	float Now = GetWorld()->GetTimeSeconds();
+	if (Now - LastAttackTime > 3.f) CurrentComboIndex = 0; // reset if idle 3s
+
+	CurrentComboIndex = (CurrentComboIndex % 3); // 0,1,2 -> maps to combo 1,2,3
+	LastAttackTime = Now;
+
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ComboAbilities.IsValidIndex(CurrentComboIndex))
+		{
+			ASC->TryActivateAbilityByClass(ComboAbilities[CurrentComboIndex]);
+		}
+	}
+	CurrentComboIndex++;
+}
+
+void ACombatSystemDemoCharacter::HandleToggleStance()
+{
+	if (StanceComp)
+	{
+		StanceComp->SetStance(StanceComp->IsMelee() ? EStance::Ranged : EStance::Melee);
+		UE_LOG(LogTemp, Warning, TEXT("Stance: %s"), StanceComp->IsMelee() ? TEXT("Melee") : TEXT("Ranged"));
+	}
 }
