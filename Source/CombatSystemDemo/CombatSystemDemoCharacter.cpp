@@ -73,6 +73,8 @@ void ACombatSystemDemoCharacter::SetupPlayerInputComponent(UInputComponent* Play
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleAimStarted);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ACombatSystemDemoCharacter::HandleAimEnded);
 		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleReload);
+
+		EnhancedInputComponent->BindAction(DashAttackAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleDashAttack);
 	}
 	else
 	{
@@ -201,4 +203,12 @@ void ACombatSystemDemoCharacter::FinishReload()
 {
 	CurrentAmmo = MaxAmmo;
 	bIsReloading = false;
+}
+
+void ACombatSystemDemoCharacter::HandleDashAttack()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		ASC->TryActivateAbilityByClass(DashAbilityClass);
+	}
 }

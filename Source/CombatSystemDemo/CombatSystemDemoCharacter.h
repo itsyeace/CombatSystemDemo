@@ -138,5 +138,12 @@ public:
 	void HandleReload();
 	FTimerHandle ReloadTimerHandle;
 	void FinishReload();
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	class UInputAction* DashAttackAction;
+	void HandleDashAttack();
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TSubclassOf<class UGameplayAbility> DashAbilityClass;
 };
 
