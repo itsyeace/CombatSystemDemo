@@ -69,6 +69,10 @@ void ACombatSystemDemoCharacter::SetupPlayerInputComponent(UInputComponent* Play
 
 		EnhancedInputComponent->BindAction(MeleeAttackAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleMeleeAttack);
 		EnhancedInputComponent->BindAction(ToggleStanceAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleToggleStance);
+
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleAimStarted);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ACombatSystemDemoCharacter::HandleAimEnded);
+		EnhancedInputComponent->BindAction(ReloadAction, ETriggerEvent::Started, this, &ACombatSystemDemoCharacter::HandleReload);
 	}
 	else
 	{
@@ -138,22 +142,29 @@ void ACombatSystemDemoCharacter::DoJumpEnd()
 
 void ACombatSystemDemoCharacter::HandleMeleeAttack()
 {
-	if (!StanceComp || !StanceComp->IsMelee()) return;
+	if (!StanceComp) return;
 
-	float Now = GetWorld()->GetTimeSeconds();
-	if (Now - LastAttackTime > 3.f) CurrentComboIndex = 0; // reset if idle 3s
-
-	CurrentComboIndex = (CurrentComboIndex % 3); // 0,1,2 -> maps to combo 1,2,3
-	LastAttackTime = Now;
-
-	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	if (StanceComp->IsMelee())
 	{
-		if (ComboAbilities.IsValidIndex(CurrentComboIndex))
+		float Now = GetWorld()->GetTimeSeconds();
+		if (Now - LastAttackTime > 3.f) CurrentComboIndex = 0;
+		CurrentComboIndex = (CurrentComboIndex % 3);
+		LastAttackTime = Now;
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 		{
-			ASC->TryActivateAbilityByClass(ComboAbilities[CurrentComboIndex]);
+			if (ComboAbilities.IsValidIndex(CurrentComboIndex))
+				ASC->TryActivateAbilityByClass(ComboAbilities[CurrentComboIndex]);
+		}
+		CurrentComboIndex++;
+	}
+	else // Ranged
+	{
+		if (!bIsAiming || bIsReloading || CurrentAmmo <= 0) return;
+		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+		{
+			ASC->TryActivateAbilityByClass(ShootAbilityClass);
 		}
 	}
-	CurrentComboIndex++;
 }
 
 void ACombatSystemDemoCharacter::HandleToggleStance()
@@ -163,4 +174,31 @@ void ACombatSystemDemoCharacter::HandleToggleStance()
 		StanceComp->SetStance(StanceComp->IsMelee() ? EStance::Ranged : EStance::Melee);
 		UE_LOG(LogTemp, Warning, TEXT("Stance: %s"), StanceComp->IsMelee() ? TEXT("Melee") : TEXT("Ranged"));
 	}
+}
+
+void ACombatSystemDemoCharacter::HandleAimStarted()
+{
+	if (StanceComp && !StanceComp->IsMelee())
+	{
+		bIsAiming = true;
+	}
+}
+
+void ACombatSystemDemoCharacter::HandleAimEnded()
+{
+	bIsAiming = false;
+}
+
+void ACombatSystemDemoCharacter::HandleReload()
+{
+	if (bIsReloading || CurrentAmmo == MaxAmmo || (StanceComp && StanceComp->IsMelee())) return;
+
+	bIsReloading = true;
+	GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, this, &ACombatSystemDemoCharacter::FinishReload, ReloadTime, false);
+}
+
+void ACombatSystemDemoCharacter::FinishReload()
+{
+	CurrentAmmo = MaxAmmo;
+	bIsReloading = false;
 }

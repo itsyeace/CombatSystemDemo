@@ -108,5 +108,35 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TArray<TSubclassOf<class UGameplayAbility>> ComboAbilities;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* AimAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* ReloadAction;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	bool bIsAiming = false;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	int32 CurrentAmmo = 30;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	int32 MaxAmmo = 30;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	bool bIsReloading = false;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ReloadTime = 2.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TSubclassOf<class UGameplayAbility> ShootAbilityClass;
+
+	void HandleAimStarted();
+	void HandleAimEnded();
+	void HandleReload();
+	FTimerHandle ReloadTimerHandle;
+	void FinishReload();
 };
 
