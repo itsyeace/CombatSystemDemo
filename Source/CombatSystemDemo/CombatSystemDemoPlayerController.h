@@ -49,4 +49,11 @@ protected:
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;
 
+public:
+	UPROPERTY(EditDefaultsOnly, Category = "HUD")
+	TSubclassOf<class UCombatHUDWidget> HUDWidgetClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "HUD")
+	class UCombatHUDWidget* HUDWidget;
+
 };

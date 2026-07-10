@@ -3,6 +3,8 @@
 #include "GameFramework/Character.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameplayEffectTypes.h"
+#include "CombatSystemDemoPlayerController.h"
+#include "CombatHUDWidget.h"
 
 UGA_MeleeCombo::UGA_MeleeCombo()
 {
@@ -53,6 +55,17 @@ void UGA_MeleeCombo::PerformTrace()
                 bool bIsCrit = (ComboIndex == 3);
                 Spec.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("Damage.Critical"), bIsCrit ? 1.f : 0.f);
                 SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
+
+                if (bIsCrit)
+                {
+                    if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(CurrentActorInfo->PlayerController.Get()))
+                    {
+                        if (PC->HUDWidget)
+                        {
+                            PC->HUDWidget->ShowCriticalHitText();
+                        }
+                    }
+                }
             }
         }
     }

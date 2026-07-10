@@ -8,6 +8,7 @@
 #include "Blueprint/UserWidget.h"
 #include "CombatSystemDemo.h"
 #include "Widgets/Input/SVirtualJoystick.h"
+#include "CombatHUDWidget.h"
 
 void ACombatSystemDemoPlayerController::BeginPlay()
 {
@@ -30,6 +31,12 @@ void ACombatSystemDemoPlayerController::BeginPlay()
 
 		}
 
+	}
+
+	if (HUDWidgetClass && IsLocalController())
+	{
+		HUDWidget = CreateWidget<UCombatHUDWidget>(this, HUDWidgetClass);
+		if (HUDWidget) HUDWidget->AddToViewport();
 	}
 }
 

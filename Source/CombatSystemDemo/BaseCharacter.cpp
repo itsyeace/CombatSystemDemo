@@ -31,6 +31,7 @@ void ABaseCharacter::InitAbilityActorInfo()
         CachedASC->InitAbilityActorInfo(PS, this);
         GiveDefaultAbilities();
         ApplyDefaultAttributes();
+        OnAbilitySystemInitialized();
     }
 }
 

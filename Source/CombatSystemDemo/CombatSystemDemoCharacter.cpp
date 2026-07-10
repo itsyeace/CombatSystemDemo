@@ -12,6 +12,10 @@
 #include "InputActionValue.h"
 #include "CombatSystemDemo.h"
 #include "AbilitySystemComponent.h"
+#include "BasePlayerState.h"
+#include "CombatSystemDemoPlayerController.h"
+#include "CombatHUDWidget.h"
+#include "BaseAttributeSet.h"
 
 ACombatSystemDemoCharacter::ACombatSystemDemoCharacter()
 {
@@ -150,6 +154,7 @@ void ACombatSystemDemoCharacter::HandleMeleeAttack()
 	{
 		float Now = GetWorld()->GetTimeSeconds();
 		if (Now - LastAttackTime > 3.f) CurrentComboIndex = 0;
+		UpdateHUDCombo();
 		CurrentComboIndex = (CurrentComboIndex % 3);
 		LastAttackTime = Now;
 		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
@@ -157,7 +162,8 @@ void ACombatSystemDemoCharacter::HandleMeleeAttack()
 			if (ComboAbilities.IsValidIndex(CurrentComboIndex))
 				ASC->TryActivateAbilityByClass(ComboAbilities[CurrentComboIndex]);
 		}
-		CurrentComboIndex++;
+		CurrentComboIndex++; 
+		UpdateHUDCombo();
 	}
 	else // Ranged
 	{
@@ -165,6 +171,7 @@ void ACombatSystemDemoCharacter::HandleMeleeAttack()
 		if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 		{
 			ASC->TryActivateAbilityByClass(ShootAbilityClass);
+			UpdateHUDAmmo();
 		}
 	}
 }
@@ -203,6 +210,7 @@ void ACombatSystemDemoCharacter::FinishReload()
 {
 	CurrentAmmo = MaxAmmo;
 	bIsReloading = false;
+	UpdateHUDAmmo();
 }
 
 void ACombatSystemDemoCharacter::HandleDashAttack()
@@ -210,5 +218,79 @@ void ACombatSystemDemoCharacter::HandleDashAttack()
 	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
 		ASC->TryActivateAbilityByClass(DashAbilityClass);
+	}
+}
+
+void ACombatSystemDemoCharacter::OnAbilitySystemInitialized()
+{
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		UBaseAttributeSet* AttrSet = Cast<ABasePlayerState>(GetPlayerState())->GetAttributeSet();
+		ASC->GetGameplayAttributeValueChangeDelegate(AttrSet->GetHealthAttribute())
+			.AddUObject(this, &ACombatSystemDemoCharacter::OnPlayerHealthChanged);
+
+		// push initial value
+		if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(GetController()))
+		{
+			if (PC->HUDWidget)
+				PC->HUDWidget->UpdatePlayerHealth(AttrSet->GetHealth(), AttrSet->GetMaxHealth());
+		}
+	}
+}
+
+void ACombatSystemDemoCharacter::OnPlayerHealthChanged(const FOnAttributeChangeData& Data)
+{
+	if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(GetController()))
+	{
+		if (PC->HUDWidget)
+		{
+			UBaseAttributeSet* AttrSet = Cast<ABasePlayerState>(GetPlayerState())->GetAttributeSet();
+			PC->HUDWidget->UpdatePlayerHealth(Data.NewValue, AttrSet->GetMaxHealth());
+		}
+	}
+}
+
+void ACombatSystemDemoCharacter::UpdateHUDAmmo()
+{
+	if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(GetController()))
+		if (PC->HUDWidget) PC->HUDWidget->UpdateAmmo(CurrentAmmo, MaxAmmo);
+}
+
+void ACombatSystemDemoCharacter::UpdateHUDCombo()
+{
+	if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(GetController()))
+		if (PC->HUDWidget) PC->HUDWidget->UpdateComboCount(CurrentComboIndex);
+}
+
+void ACombatSystemDemoCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	GetWorld()->GetTimerManager().SetTimer(AbilityStatusTimer, this, &ACombatSystemDemoCharacter::UpdateAbilityStatusHUD, 0.2f, true);
+}
+
+void ACombatSystemDemoCharacter::UpdateAbilityStatusHUD()
+{
+	ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(GetController());
+	if (!PC || !PC->HUDWidget || !DashAbilityClass) return;
+
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC) return;
+
+	if (!StanceComp || !StanceComp->IsMelee())
+	{
+		PC->HUDWidget->UpdateAbilityStatus(EAbilityStatus::Disabled);
+		return;
+	}
+
+	UGameplayAbility* CDO = DashAbilityClass->GetDefaultObject<UGameplayAbility>();
+	FGameplayTagContainer CooldownTags = CDO->GetCooldownTags() ? *CDO->GetCooldownTags() : FGameplayTagContainer();
+
+	if (!CooldownTags.IsEmpty() && ASC->HasAnyMatchingGameplayTags(CooldownTags))
+	{
+		PC->HUDWidget->UpdateAbilityStatus(EAbilityStatus::OnCooldown);
+	}
+	else
+	{
+		PC->HUDWidget->UpdateAbilityStatus(EAbilityStatus::Active);
 	}
 }

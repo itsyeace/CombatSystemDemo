@@ -1,5 +1,6 @@
 #include "GA_DummyAOEAttack.h"
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemInterface.h"
 
 UGA_DummyAOEAttack::UGA_DummyAOEAttack()
 {
@@ -11,6 +12,7 @@ void UGA_DummyAOEAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 {
     if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
     {
+        UE_LOG(LogTemp, Warning, TEXT("DummyAOE: CommitAbility FAILED"));
         EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
         return;
     }
@@ -25,23 +27,39 @@ void UGA_DummyAOEAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 
     GetWorld()->SweepMultiByChannel(Hits, Avatar->GetActorLocation(), Avatar->GetActorLocation(), FQuat::Identity, ECC_Pawn, Sphere, Params);
 
+    UE_LOG(LogTemp, Warning, TEXT("DummyAOE: Hits found = %d"), Hits.Num());
+
     UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
     if (SourceASC && DamageEffectClass)
     {
         for (auto& Hit : Hits)
         {
             if (!Hit.GetActor()) continue;
-            UAbilitySystemComponent* TargetASC = Hit.GetActor()->FindComponentByClass<UAbilitySystemComponent>();
+            UE_LOG(LogTemp, Warning, TEXT("DummyAOE: Hit Actor = %s"), *Hit.GetActor()->GetName());
+
+            UAbilitySystemComponent* TargetASC = nullptr;
+            if (IAbilitySystemInterface* ASI = Cast<IAbilitySystemInterface>(Hit.GetActor()))
+                TargetASC = ASI->GetAbilitySystemComponent();
+
+            UE_LOG(LogTemp, Warning, TEXT("DummyAOE: TargetASC valid = %s"), TargetASC ? TEXT("YES") : TEXT("NO"));
+
             if (!TargetASC) continue;
 
             FGameplayEffectContextHandle Ctx = SourceASC->MakeEffectContext();
             FGameplayEffectSpecHandle Spec = SourceASC->MakeOutgoingSpec(DamageEffectClass, 1, Ctx);
+            UE_LOG(LogTemp, Warning, TEXT("DummyAOE: Spec valid = %s"), Spec.IsValid() ? TEXT("YES") : TEXT("NO"));
+
             if (Spec.IsValid())
             {
                 Spec.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("Damage.Critical"), 0.f);
-                SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
+                FActiveGameplayEffectHandle AppliedHandle = SourceASC->ApplyGameplayEffectSpecToTarget(*Spec.Data.Get(), TargetASC);
+                UE_LOG(LogTemp, Warning, TEXT("DummyAOE: Effect Applied = %s"), AppliedHandle.WasSuccessfullyApplied() ? TEXT("YES") : TEXT("NO"));
             }
         }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("DummyAOE: SourceASC or DamageEffectClass missing"));
     }
 
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);

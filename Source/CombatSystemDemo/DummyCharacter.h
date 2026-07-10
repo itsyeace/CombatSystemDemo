@@ -29,6 +29,8 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Combat")
     float RespawnRadius = 800.f;
 
+    void PushHealthToHUD();
+
 protected:
     UPROPERTY(VisibleAnywhere) UAbilitySystemComponent* AbilitySystemComponent;
     UPROPERTY(VisibleAnywhere) UBaseAttributeSet* AttributeSet;

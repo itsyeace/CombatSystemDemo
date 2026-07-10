@@ -3,6 +3,8 @@
 #include "BaseAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "CombatSystemDemoPlayerController.h"
+#include "CombatHUDWidget.h"
 
 ADummyCharacter::ADummyCharacter()
 {
@@ -25,6 +27,11 @@ void ADummyCharacter::BeginPlay()
         if (Spec.IsValid()) AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
     }
 
+    if (AutoAttackAbility)
+    {
+        AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(AutoAttackAbility, 1, 0));
+    }
+
     HealthChangedHandle = AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(AttributeSet->GetHealthAttribute())
         .AddUObject(this, &ADummyCharacter::OnHealthChanged);
 
@@ -33,6 +40,8 @@ void ADummyCharacter::BeginPlay()
 
 void ADummyCharacter::OnHealthChanged(const FOnAttributeChangeData& Data)
 {
+    PushHealthToHUD();
+
     if (bIsDead) return;
 
     if (Data.NewValue < Data.OldValue)
@@ -76,6 +85,18 @@ void ADummyCharacter::RespawnAtRandomLocation()
 void ADummyCharacter::PerformAutoAttack()
 {
     if (bIsDead || !AutoAttackAbility || !AbilitySystemComponent) return;
-    AbilitySystemComponent->TryActivateAbilityByClass(AutoAttackAbility);
-    UE_LOG(LogTemp, Warning, TEXT("SWEEP ATTACK IS FIRING!"));
+    //AbilitySystemComponent->TryActivateAbilityByClass(AutoAttackAbility);
+    bool bActivated = AbilitySystemComponent->TryActivateAbilityByClass(AutoAttackAbility);
+    UE_LOG(LogTemp, Warning, TEXT("AutoAttack Activated: %s"), bActivated ? TEXT("YES") : TEXT("NO"));
+}
+
+void ADummyCharacter::PushHealthToHUD()
+{
+    ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(this, 0);
+    if (!PlayerChar) return;
+    if (ACombatSystemDemoPlayerController* PC = Cast<ACombatSystemDemoPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
+    {
+        if (PC->HUDWidget)
+            PC->HUDWidget->UpdateDummyHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+    }
 }

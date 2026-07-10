@@ -33,4 +33,7 @@ protected:
     void InitAbilityActorInfo();
     void GiveDefaultAbilities();
     void ApplyDefaultAttributes();
+
+protected:
+    virtual void OnAbilitySystemInitialized() {} 
 };

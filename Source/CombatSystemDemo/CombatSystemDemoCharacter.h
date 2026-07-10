@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "BaseCharacter.h"
+#include "GameplayEffectTypes.h"
 #include "CombatSystemDemoCharacter.generated.h"
 
 class USpringArmComponent;
@@ -65,6 +66,8 @@ protected:
 
 	/** Initialize input action bindings */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void BeginPlay() override;
 
 protected:
 
@@ -145,5 +148,16 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TSubclassOf<class UGameplayAbility> DashAbilityClass;
+
+	void BindHealthDelegate();
+	void OnPlayerHealthChanged(const FOnAttributeChangeData& Data);
+
+	virtual void OnAbilitySystemInitialized() override;
+
+	void UpdateHUDAmmo();
+	void UpdateHUDCombo();
+
+	FTimerHandle AbilityStatusTimer;
+	void UpdateAbilityStatusHUD();
 };
 
