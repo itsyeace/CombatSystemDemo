@@ -19,6 +19,8 @@ void UGA_Shoot::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
         return;
     }
 
+    PlayShootMontage();
+
     // Decrement ammo
     Char->CurrentAmmo = FMath::Max(0, Char->CurrentAmmo - 1);
     UE_LOG(LogTemp, Warning, TEXT("Ammo: %d"), Char->CurrentAmmo);
@@ -52,6 +54,8 @@ void UGA_Shoot::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
             }
         }
     }
+
+
 
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }

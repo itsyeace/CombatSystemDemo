@@ -40,4 +40,8 @@ private:
     void TickDash();
     void FinishDash();
     void DoDamageTrace();
+
+protected:
+    UFUNCTION(BlueprintImplementableEvent, Category = "Dash")
+    void PlayDashMontage();
 };

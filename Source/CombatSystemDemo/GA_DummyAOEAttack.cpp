@@ -57,10 +57,13 @@ void UGA_DummyAOEAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle
             }
         }
     }
+
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("DummyAOE: SourceASC or DamageEffectClass missing"));
     }
+
+    PlayAOEMontage();
 
     EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
 }

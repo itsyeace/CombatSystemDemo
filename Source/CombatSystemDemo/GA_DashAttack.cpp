@@ -48,6 +48,8 @@ void UGA_DashAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, co
     DashElapsed = 0.f;
 
     GetWorld()->GetTimerManager().SetTimer(DashTimerHandle, this, &UGA_DashAttack::TickDash, 0.016f, true);
+
+    PlayDashMontage();
 }
 
 void UGA_DashAttack::TickDash()
